@@ -39,6 +39,31 @@ This rebuilds the site and opens it at http://localhost:8000. Addresses work
 the same way as on GitHub Pages (`/about`, `/research`, ...). Press Ctrl+C to
 stop it.
 
+## Photos
+
+My original photos live in `Images/`. That folder is never published or
+committed. The site uses small copies in `assets/photos/`.
+
+To add, swap or remove a photo:
+
+1. Put the original in `Images/`.
+2. Open `photos.json` and add an entry where I want it: `portrait` (Home page
+   and Contact), `home` (Highlights), `research-presentations`, `research-epc`
+   or `about-service`. Each entry has the file name (`src`), a `caption` shown
+   under the photo, and `alt` text describing the photo for screen readers.
+3. Make the web copies, then preview and publish:
+
+   ```
+   powershell -ExecutionPolicy Bypass -File optimize-photos.ps1
+   python serve.py
+   git add -A
+   git commit -m "Update photos"
+   git push
+   ```
+
+The copies are resized, turned upright, and saved without the original's
+hidden details (location, camera, date).
+
 ## Rules the build follows
 
 - Phone numbers and home addresses never appear on the pages. If something

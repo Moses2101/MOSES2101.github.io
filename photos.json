@@ -1,0 +1,81 @@
+{
+  "portrait": {
+    "src": "Moses Photo.jpeg",
+    "alt": "Portrait of Moses Oladele Ogunniran"
+  },
+  "galleries": {
+    "home": [
+      {
+        "src": "AERA CONFERENCE.jpeg",
+        "caption": "American Educational Research Association (AERA) 2026 Annual Meeting, Los Angeles",
+        "alt": "Moses Ogunniran standing beside the AERA 2026 Annual Meeting roundtable sessions sign"
+      },
+      {
+        "src": "CIES with Prof.. David.jpeg",
+        "caption": "With Prof. David at the Comparative and International Education Society (CIES) annual meeting",
+        "alt": "Moses Ogunniran with Prof. David at the CIES annual meeting"
+      },
+      {
+        "src": "EPC with President Jon Koh of Shelton State Community College...jpg",
+        "caption": "The Education Policy Center team with President Jon Koh of Shelton State Community College",
+        "alt": "Education Policy Center team members standing in a row with President Jon Koh"
+      }
+    ],
+    "research-presentations": [
+      {
+        "src": "AERA CONFERENCE.jpeg",
+        "caption": "AERA 2026 Annual Meeting, Los Angeles",
+        "alt": "Moses Ogunniran at the AERA 2026 Annual Meeting"
+      },
+      {
+        "src": "CIES with Prof.. David.jpeg",
+        "caption": "With Prof. David at the CIES annual meeting",
+        "alt": "Moses Ogunniran with Prof. David at the CIES annual meeting"
+      },
+      {
+        "src": "CIES.jpeg",
+        "caption": "With colleagues at the CIES annual meeting",
+        "alt": "Moses Ogunniran with three colleagues at the CIES annual meeting"
+      }
+    ],
+    "research-epc": [
+      {
+        "src": "Moses at EPC.jpeg",
+        "caption": "At work at the Education Policy Center, The University of Alabama",
+        "alt": "Moses Ogunniran working at a laptop in his Education Policy Center office"
+      },
+      {
+        "src": "EPC with President Jon Koh of Shelton State Community College...jpg",
+        "caption": "The Education Policy Center with President Jon Koh of Shelton State Community College",
+        "alt": "Education Policy Center team with President Jon Koh"
+      },
+      {
+        "src": "EPC visit to UA new Randall Welcome Center.jpg",
+        "caption": "Education Policy Center visit to the University of Alabama's new Randall Welcome Center",
+        "alt": "Education Policy Center team in front of the large BAMA letters at the Randall Welcome Center"
+      },
+      {
+        "src": "EPC Welcomes Dr. Joyce Alexander the New Dean of the College of Education at UA.jpg",
+        "caption": "The Education Policy Center welcomes Dr. Joyce Alexander, Dean of the College of Education",
+        "alt": "Education Policy Center team with Dr. Joyce Alexander in a conference room"
+      }
+    ],
+    "about-service": [
+      {
+        "src": "Moses and BNU Student service union.jpeg",
+        "caption": "With the Beijing Normal University student service union",
+        "alt": "Moses Ogunniran with members of the Beijing Normal University student service union"
+      },
+      {
+        "src": "Moses with other exco 2.jpeg",
+        "caption": "With fellow executive committee members at Beijing Normal University",
+        "alt": "Moses Ogunniran standing with five fellow executive committee members on a stage"
+      },
+      {
+        "src": "Moses collecting award.jpeg",
+        "caption": "Collecting an award",
+        "alt": "Moses Ogunniran holding an award certificate"
+      }
+    ]
+  }
+}

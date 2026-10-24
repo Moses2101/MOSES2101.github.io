@@ -10,7 +10,9 @@ Standard library only, so it runs on any machine with Python 3.8+.
 from __future__ import annotations
 
 import html
+import json
 import re
+import struct
 import shutil
 import sys
 import zipfile
@@ -22,6 +24,8 @@ from urllib.parse import quote
 ROOT = Path(__file__).resolve().parent
 CV_PATH = ROOT / "cv" / "cv.docx"
 ASSETS = ROOT / "assets"
+PHOTOS_DIR = ASSETS / "photos"
+PHOTOS_CONFIG = ROOT / "photos.json"
 DIST = ROOT / "dist"
 
 # Section key -> headings (compared case-insensitively, ignoring a trailing
@@ -734,7 +738,7 @@ def presentations_html(items: list[dict], limit: int = 0) -> str:
         else:
             body = f'<p class="entry-title">{rich(p["venue"], highlight=True)}</p>'
         year = f'<p class="entry-meta">{esc(p["year"])}</p>' if p["year"] else ""
-        rows.append(f'<article class="entry talk"><div class="entry-head">{body}</div>{year}</article>')
+        rows.append(f'<article class="entry talk"><div class="entry-head"><div>{body}</div>{year}</div></article>')
     return '<div class="entries">' + "".join(rows) + "</div>"
 
 
@@ -777,6 +781,88 @@ def contact_links_html(contact: dict) -> str:
     return '<ul class="contact-list">' + "".join(items) + "</ul>"
 
 
+# --------------------------------------------------------------------------
+# Photos (optional): photos.json says which picture goes where; the files are
+# the web-sized copies made by optimize-photos.ps1 in assets/photos/.
+# --------------------------------------------------------------------------
+
+def photo_slug(src: str) -> str:
+    """Must match Get-Slug in optimize-photos.ps1."""
+    stem = re.sub(r"\.[^.]+$", "", src)
+    return re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-") + ".jpg"
+
+
+def jpeg_size(path: Path) -> tuple[int, int]:
+    """(width, height) from a JPEG's frame header, or (0, 0) if unreadable."""
+    data = path.read_bytes()
+    i = 2
+    while i + 9 < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if marker in (0xC0, 0xC1, 0xC2):
+            h, w = struct.unpack(">HH", data[i + 5:i + 9])
+            return w, h
+        i += 2 + struct.unpack(">H", data[i + 2:i + 4])[0]
+    return 0, 0
+
+
+def load_photos() -> dict:
+    """Read photos.json, keeping only pictures whose web copy exists."""
+    if not PHOTOS_CONFIG.exists():
+        return {"portrait": None, "galleries": {}}
+    try:
+        config = json.loads(PHOTOS_CONFIG.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise BuildError(f"photos.json is not valid JSON: {e}")
+
+    def resolve(item):
+        if not item or not item.get("src"):
+            return None
+        path = PHOTOS_DIR / photo_slug(item["src"])
+        if not path.exists():
+            print(f"Warning: no web copy of '{item['src']}' yet; run optimize-photos.ps1. Skipping it.")
+            return None
+        w, h = jpeg_size(path)
+        return {**item, "file": f"assets/photos/{path.name}", "w": w, "h": h}
+
+    galleries = {}
+    for name, items in (config.get("galleries") or {}).items():
+        resolved = [p for p in (resolve(i) for i in items) if p]
+        if resolved:
+            galleries[name] = resolved
+    return {"portrait": resolve(config.get("portrait")), "galleries": galleries}
+
+
+PHOTOS: dict = {"portrait": None, "galleries": {}}
+
+
+def img_tag(p: dict, cls: str = "", eager: bool = False) -> str:
+    size = f' width="{p["w"]}" height="{p["h"]}"' if p["w"] else ""
+    loading = "" if eager else ' loading="lazy"'
+    c = f' class="{cls}"' if cls else ""
+    return f'<img src="{esc(p["file"])}" alt="{esc(p.get("alt", ""))}"{size}{loading} decoding="async"{c}>'
+
+
+def gallery(name: str) -> str:
+    items = PHOTOS["galleries"].get(name)
+    if not items:
+        return ""
+    figs = "".join(
+        f'<figure class="photo">{img_tag(p)}'
+        + (f"<figcaption>{esc(p['caption'])}</figcaption>" if p.get("caption") else "")
+        + "</figure>"
+        for p in items
+    )
+    return f'<div class="gallery gallery-{len(items)}">{figs}</div>'
+
+
+def portrait(cls: str, eager: bool = False) -> str:
+    p = PHOTOS["portrait"]
+    return f'<div class="{cls}">{img_tag(p, eager=eager)}</div>' if p else ""
+
+
 ICON_SUN = ('<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">'
             '<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
             '<path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2'
@@ -810,6 +896,8 @@ def layout(slug: str, title: str, body: str, cv: dict, description: str) -> str:
     page_title = name if slug == "index" else f"{title} | {name}"
     updated = f' · CV updated {esc(cv["updated"])}' if cv["updated"] else ""
     year = date.today().year
+    p = PHOTOS["portrait"]
+    og_image = f'\n<meta property="og:image" content="{esc(p["file"])}">' if p else ""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -820,7 +908,7 @@ def layout(slug: str, title: str, body: str, cv: dict, description: str) -> str:
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="{esc(page_title)}">
 <meta property="og:description" content="{esc(description)}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="website">{og_image}
 <link rel="icon" href="{favicon(name)}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -892,7 +980,8 @@ def render_home(cv: dict, cv_file: str) -> str:
                          for n, l in stats if n)
     roles_html = "".join(f"<li>{esc(r)}</li>" for r in roles)
     body = f"""
-<section class="hero">
+<section class="hero{' has-portrait' if PHOTOS['portrait'] else ''}">
+ <div class="hero-text">
   <p class="eyebrow">{esc(affiliation)}</p>
   <h1>{esc(name)}</h1>
   <p class="hero-tagline">{esc(tagline(cv))}</p>
@@ -901,6 +990,8 @@ def render_home(cv: dict, cv_file: str) -> str:
     <a class="button" href="research">Research and publications</a>
     <a class="button button-quiet" href="{esc(cv_file)}" download>Download CV</a>
   </div>
+ </div>
+ {portrait("hero-portrait", eager=True)}
 </section>
 <section class="intro">
   <div class="prose"><p>{rich(intro_paragraph(cv))}</p></div>
@@ -909,6 +1000,8 @@ def render_home(cv: dict, cv_file: str) -> str:
 """
     if cv["interests"]:
         body += section(cv["titles"].get("interests", "Research Interests"), chips(cv["interests"]))
+    if gallery("home"):
+        body += section("Highlights", gallery("home"))
     body += section("Recent publications",
                     publications_html(pubs[:1], filterable=False, limit=4)
                     + '<p class="more"><a href="research#publications">All publications</a></p>')
@@ -926,7 +1019,7 @@ def render_about(cv: dict) -> str:
     if cv["awards"]:
         body += section(t["awards"], entries_html(cv["awards"]), "awards")
     if cv["service"]:
-        body += section(t["service"], entries_html(cv["service"]), "service")
+        body += section(t["service"], gallery("about-service") + entries_html(cv["service"]), "service")
     if cv["memberships"]:
         body += section(t["memberships"], entries_html(cv["memberships"]), "memberships")
     return body
@@ -942,8 +1035,9 @@ def render_research(cv: dict) -> str:
     if cv["grants"]:
         body += section(t["grants"], grants_html(cv["grants"]), "grants")
     if cv["presentations"]:
-        body += section(t["presentations"], presentations_html(cv["presentations"]), "presentations")
-    body += section(t["research"], entries_html(cv["research"]), "experience")
+        body += section(t["presentations"], gallery("research-presentations")
+                        + presentations_html(cv["presentations"]), "presentations")
+    body += section(t["research"], gallery("research-epc") + entries_html(cv["research"]), "experience")
     if cv["funding"]:
         body += section(t["funding"], entries_html(cv["funding"]), "funding")
     if cv["review"]:
@@ -996,7 +1090,7 @@ def render_contact(cv: dict) -> str:
     body += '<div class="contact-grid">'
     body += section("Reach me", contact_links_html(c))
     aff = f"<p>{esc(affiliation)}</p>" + "".join(f'<p class="entry-sub">{esc(r)}</p>' for r in roles)
-    body += section("Affiliation", f'<div class="prose">{aff}</div>')
+    body += section("Affiliation", portrait("contact-portrait") + f'<div class="prose">{aff}</div>')
     body += "</div>"
     if cv["interests"]:
         body += section(cv["titles"].get("interests", "Research Interests"), chips(cv["interests"]))
@@ -1010,8 +1104,9 @@ def visible_text(page: str) -> str:
 
 
 def build(cv_path: Path = CV_PATH, out_dir: Path = DIST) -> Path:
-    global NAME_RE
+    global NAME_RE, PHOTOS
     cv = parse_cv(cv_path)
+    PHOTOS = load_photos()
     name = cv["contact"]["name"]
     NAME_RE = name_regex(name)
     cv_file = re.sub(r"[^A-Za-z0-9]+", "-", name).strip("-") + "-CV.docx"
@@ -1037,6 +1132,11 @@ def build(cv_path: Path = CV_PATH, out_dir: Path = DIST) -> Path:
         (out_dir / f"{slug}.html").write_text(page, encoding="utf-8")
     for asset in ("style.css", "site.js"):
         shutil.copy2(ASSETS / asset, out_dir / "assets" / asset)
+    used = {PHOTOS["portrait"]["file"]} if PHOTOS["portrait"] else set()
+    used |= {p["file"] for items in PHOTOS["galleries"].values() for p in items}
+    for rel in used:
+        (out_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, out_dir / rel)
     shutil.copy2(cv_path, out_dir / cv_file)
     (out_dir / ".nojekyll").write_text("", encoding="utf-8")
 
