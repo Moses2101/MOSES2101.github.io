@@ -551,8 +551,9 @@ def parse_contact(preamble: list[Para]) -> dict:
         raise BuildError("The CV should start with your name on the first line.")
     rest = " ".join(lines[1:])
     links = []
-    for raw in URL_RE.findall(rest):
-        url = raw.rstrip(".,;)")
+    for m in URL_RE.finditer(rest):
+        url = m.group(0).rstrip(".,;)")
+        written = re.search(r"([A-Za-z][A-Za-z ]{1,40}?)\s*:\s*$", rest[:m.start()])
         if not url.startswith("http"):
             url = "https://" + url
         low = url.lower()
@@ -567,7 +568,8 @@ def parse_contact(preamble: list[Para]) -> dict:
         elif "github.com" in low:
             label = "GitHub"
         else:
-            label = "Website"
+            # Use the CV's own label, e.g. "Academic Website: https://..."
+            label = heading_case(written.group(1)) if written else "Website"
         links.append({"label": label, "url": url})
     email = EMAIL_RE.search(rest)
     return {"name": lines[0], "email": email.group(0) if email else "", "links": links}
@@ -863,6 +865,15 @@ def portrait(cls: str, eager: bool = False) -> str:
     return f'<div class="{cls}">{img_tag(p, eager=eager)}</div>' if p else ""
 
 
+def contact_line_html(contact: dict) -> str:
+    """Compact, clickable contact line, like the header of the CV."""
+    items = [f'<a href="{esc(l["url"])}" rel="noopener">{esc(l["label"])}</a>' for l in contact["links"]]
+    if contact["email"]:
+        e = esc(contact["email"])
+        items.insert(0, f'<a href="mailto:{e}">{e}</a>')
+    return '<ul class="contact-line">' + "".join(f"<li>{i}</li>" for i in items) + "</ul>" if items else ""
+
+
 ICON_SUN = ('<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">'
             '<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
             '<path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2'
@@ -1073,6 +1084,7 @@ def render_cv(cv: dict, cv_file: str) -> str:
     body = (
         '<header class="page-head"><h1>Curriculum Vitae</h1>'
         f'<p class="page-lead">{esc(cv["contact"]["name"])}</p>'
+        f'{contact_line_html(cv["contact"])}'
         f'<div class="actions"><a class="button" href="{esc(cv_file)}" download>Download CV (.docx)</a></div>'
         "</header>"
         f'<nav class="toc" aria-label="CV sections"><ul>{toc}</ul></nav>'
@@ -1095,6 +1107,112 @@ def render_contact(cv: dict) -> str:
     if cv["interests"]:
         body += section(cv["titles"].get("interests", "Research Interests"), chips(cv["interests"]))
     return body
+
+
+# --------------------------------------------------------------------------
+# Clickable links in the published CV copy
+# --------------------------------------------------------------------------
+
+HYPERLINK_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+# A run holding only formatting and one piece of text; other runs are left alone.
+SIMPLE_RUN_RE = re.compile(
+    r"(<w:r(?:\s[^>]*)?>)((?:<w:rPr>(?:(?!</w:rPr>).)*</w:rPr>)?)<w:t(?:\s[^>]*)?>([^<]*)</w:t></w:r>", re.S
+)
+LINK_TARGET_RE = re.compile(r"(?:https?://|www\.)[^\s<>\"]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+# Word requires run properties in schema order, so color and underline go
+# before the first property that must follow them.
+AFTER_COLOR = r"spacing|w|kern|position|sz|szCs|highlight|u|effect|bdr|shd|fitText|vertAlign|rtl|cs|em|lang|eastAsianLayout|specVanish|oMath"
+AFTER_UNDERLINE = r"effect|bdr|shd|fitText|vertAlign|rtl|cs|em|lang|eastAsianLayout|specVanish|oMath"
+
+
+def _insert_before(rpr: str, tag: str, followers: str) -> str:
+    m = re.search(rf"<w:(?:{followers})[\s/>]", rpr)
+    pos = m.start() if m else rpr.rindex("</w:rPr>")
+    return rpr[:pos] + tag + rpr[pos:]
+
+
+def _link_rpr(rpr: str) -> str:
+    if not rpr:
+        return '<w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr>'
+    rpr = re.sub(r"<w:(?:color|u)\s[^>]*/>", "", rpr)
+    rpr = _insert_before(rpr, '<w:color w:val="0563C1"/>', AFTER_COLOR)
+    return _insert_before(rpr, '<w:u w:val="single"/>', AFTER_UNDERLINE)
+
+
+def linkify_docx(src: Path, dst: Path) -> int:
+    """Copy the CV, turning web addresses and emails into clickable links.
+
+    Returns how many links were added. Falls back to a plain copy if the
+    result would not be valid XML.
+    """
+    with zipfile.ZipFile(src) as z:
+        xml = z.read("word/document.xml").decode("utf-8")
+        rels = z.read("word/_rels/document.xml.rels").decode("utf-8")
+
+    # Leave text that is already inside a link alone.
+    linked = [(m.start(), m.end()) for m in re.finditer(r"<w:hyperlink\b.*?</w:hyperlink>", xml, re.S)]
+    new_rels: list[str] = []
+
+    def rewrite(m: re.Match) -> str:
+        if any(a <= m.start() < b for a, b in linked):
+            return m.group(0)
+        open_tag, rpr, text = m.groups()
+        if not LINK_TARGET_RE.search(text):
+            return m.group(0)
+        out, pos = [], 0
+
+        def plain(t: str) -> str:
+            return f'{open_tag}{rpr}<w:t xml:space="preserve">{t}</w:t></w:r>' if t else ""
+
+        # An address running into the next run was split by Word; linking
+        # only the first part would point somewhere wrong, so skip the run.
+        if re.search(r"[^\s.,;)]$", text) and LINK_TARGET_RE.search(text[-80:].split()[-1] if text.split() else ""):
+            nxt = re.match(r"(?:(?!</w:p>|<w:t[\s>]|<w:br\b|<w:tab\b).)*<w:t(?:\s[^>]*)?>([^<]{0,2})",
+                           xml[m.end():m.end() + 2000], re.S)
+            if nxt and re.match(r"[\w/%?=&#~+\-]|\.[^\s<]", nxt.group(1)):
+                return m.group(0)
+        for lm in LINK_TARGET_RE.finditer(text):
+            shown = lm.group(0).rstrip(".,;)")
+            if "@" in shown and "/" not in shown:
+                target = "mailto:" + shown
+            else:
+                target = shown if shown.startswith("http") else "https://" + shown
+            rid = f"rIdWebLink{len(new_rels) + 1}"
+            new_rels.append(f'<Relationship Id="{rid}" Type="{HYPERLINK_TYPE}" Target="{target}" TargetMode="External"/>')
+            out.append(plain(text[pos:lm.start()]))
+            out.append(f'<w:hyperlink r:id="{rid}" w:history="1">{open_tag}{_link_rpr(rpr)}'
+                       f'<w:t xml:space="preserve">{shown}</w:t></w:r></w:hyperlink>')
+            pos = lm.start() + len(shown)
+        out.append(plain(text[pos:]))
+        return "".join(out)
+
+    new_xml = SIMPLE_RUN_RE.sub(rewrite, xml)
+    if not new_rels:
+        shutil.copy2(src, dst)
+        return 0
+    root_tag = re.search(r"<w:document\b[^>]*>", new_xml).group(0)
+    if "xmlns:r=" not in root_tag:
+        new_xml = new_xml.replace(root_tag, root_tag[:-1] + f' xmlns:r="{R_NS}">', 1)
+    new_rels_xml = rels.replace("</Relationships>", "".join(new_rels) + "</Relationships>")
+    try:
+        ET.fromstring(new_xml.encode("utf-8"))
+        ET.fromstring(new_rels_xml.encode("utf-8"))
+    except ET.ParseError as e:
+        print(f"Warning: could not add links to the CV copy ({e}); publishing it unchanged.")
+        shutil.copy2(src, dst)
+        return 0
+
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            if item.filename == "word/document.xml":
+                data = new_xml.encode("utf-8")
+            elif item.filename == "word/_rels/document.xml.rels":
+                data = new_rels_xml.encode("utf-8")
+            else:
+                data = zin.read(item.filename)
+            zout.writestr(item, data)
+    return len(new_rels)
 
 
 def visible_text(page: str) -> str:
@@ -1137,13 +1255,14 @@ def build(cv_path: Path = CV_PATH, out_dir: Path = DIST) -> Path:
     for rel in used:
         (out_dir / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, out_dir / rel)
-    shutil.copy2(cv_path, out_dir / cv_file)
+    n_links = linkify_docx(cv_path, out_dir / cv_file)
     (out_dir / ".nojekyll").write_text("", encoding="utf-8")
 
     n_pubs = sum(len(g["items"]) for g in cv["publications"])
     print(f"Built {len(pages)} pages into {out_dir.name}/ "
           f"({n_pubs} publications, {len(cv['presentations'])} presentations, "
-          f"{len(cv['research']) + len(cv['teaching'])} positions).")
+          f"{len(cv['research']) + len(cv['teaching'])} positions; "
+          f"{n_links} clickable links in the CV download).")
     return out_dir
 
 

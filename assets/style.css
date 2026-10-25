@@ -296,6 +296,11 @@ a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
 @media (min-width: 760px) { .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .skill-group h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; margin-bottom: .7rem; }
 
+.contact-line { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem 0; }
+.contact-line li { display: inline-flex; align-items: center; }
+.contact-line li + li::before { content: "\00B7"; color: var(--muted); margin: 0 .6rem; }
+.contact-line a { font-weight: 600; word-break: break-word; }
+
 /* CV table of contents */
 .toc { padding: 1.5rem 0 0; }
 .toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem .6rem; }
