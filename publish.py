@@ -159,7 +159,7 @@ def main() -> int:
 
     build.build()
     git("add", "-A")
-    if git("diff", "--cached", "--quiet", check=False).returncode == 0:
+    if git("diff", "--cached", "--quiet", "--no-ext-diff", "--no-textconv", check=False).returncode == 0:
         print("Nothing to commit.")
         return 0
     git("commit", "-m", args.message or f"Update CV from {source.name}")
