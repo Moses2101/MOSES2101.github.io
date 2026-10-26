@@ -226,6 +226,11 @@ a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
 .stat { border-left: 3px solid var(--accent); padding: .1rem 0 .1rem .9rem; }
 .stat-num { display: block; font-family: var(--font-head); font-size: 2.2rem; font-weight: 560; line-height: 1.1; }
 .stat-label { display: block; color: var(--muted); font-size: .92rem; line-height: 1.35; }
+.stat-link { color: var(--text); text-decoration: none; }
+.stat-link .stat-label { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.stat-link .stat-label::after { content: " \2197"; }
+.stat-link:hover .stat-num, .stat-link:hover .stat-label { color: var(--primary); }
+@media (max-width: 899px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 
 /* Page heads and sections */
 .page-head { padding: 3rem 0 1.5rem; border-bottom: 1px solid var(--border); }

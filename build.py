@@ -546,6 +546,15 @@ def section_outline(path: Path) -> list[str]:
     return lines
 
 
+def parse_citations(paras: list[Para]) -> str:
+    """Citation count as the CV states it, e.g. "over 600 citations" -> "600+"."""
+    for p in paras:
+        m = re.search(r"(over|more than)?\s*([\d,]+)\s*(\+)?\s+citations", p.text, re.I)
+        if m:
+            return m.group(2) + ("+" if m.group(1) or m.group(3) else "")
+    return ""
+
+
 def parse_contact(preamble: list[Para]) -> dict:
     lines = [clean(l) for p in preamble for l in p.text.split("\n") if clean(l)]
     if not lines:
@@ -615,6 +624,7 @@ def parse_cv(path: Path) -> dict:
         "presentations": parse_presentations(paras_of("presentations")),
         "skills": parse_skills(paras_of("skills")),
         "updated": updated,
+        "citations": parse_citations(paras),
     }
     for key in REQUIRED_SECTIONS:
         if not cv[key]:
@@ -995,6 +1005,11 @@ def render_home(cv: dict, cv_file: str) -> str:
              (len(cv["grants"]), "Research grants")]
     stats_html = "".join(f'<div class="stat"><span class="stat-num">{n}</span><span class="stat-label">{l}</span></div>'
                          for n, l in stats if n)
+    if cv["citations"]:
+        scholar = next((l["url"] for l in cv["contact"]["links"] if l["label"] == "Google Scholar"), "")
+        num = f'<span class="stat-num">{esc(cv["citations"])}</span><span class="stat-label">Google Scholar citations</span>'
+        stats_html += (f'<a class="stat stat-link" href="{esc(scholar)}" rel="noopener">{num}</a>' if scholar
+                       else f'<div class="stat">{num}</div>')
     roles_html = "".join(f"<li>{esc(r)}</li>" for r in roles)
     body = f"""
 <section class="hero{' has-portrait' if PHOTOS['portrait'] else ''}">
