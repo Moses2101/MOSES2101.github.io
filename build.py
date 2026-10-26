@@ -59,6 +59,7 @@ PAGES = [
     ("about", "About", "about"),
     ("research", "Research", "research"),
     ("teaching", "Teaching", "teaching"),
+    ("service", "Service", "service"),
     ("cv", "CV", "cv"),
     ("contact", "Contact", "contact"),
 ]
@@ -1051,10 +1052,6 @@ def render_about(cv: dict) -> str:
     body += section(t["education"], gallery("about-education") + entries_html(cv["education"]), "education")
     if cv["awards"]:
         body += section(t["awards"], entries_html(cv["awards"]), "awards")
-    if cv["service"]:
-        body += section(t["service"], gallery("about-service") + entries_html(cv["service"]), "service")
-    if cv["memberships"]:
-        body += section(t["memberships"], entries_html(cv["memberships"]), "memberships")
     return body
 
 
@@ -1073,14 +1070,24 @@ def render_research(cv: dict) -> str:
     body += section(t["research"], gallery("research-epc") + entries_html(cv["research"]), "experience")
     if cv["funding"]:
         body += section(t["funding"], entries_html(cv["funding"]), "funding")
-    if cv["review"]:
-        body += section(t["review"], entries_html(cv["review"]), "review")
     return body
 
 
 def render_teaching(cv: dict) -> str:
     body = '<header class="page-head"><h1>Teaching</h1></header>'
     body += section(cv["titles"]["teaching"], entries_html(cv["teaching"]), "teaching")
+    return body
+
+
+def render_service(cv: dict) -> str:
+    t = cv["titles"]
+    body = '<header class="page-head"><h1>Service</h1></header>'
+    if cv["service"]:
+        body += section(t["service"], gallery("service") + entries_html(cv["service"]), "leadership")
+    if cv["review"]:
+        body += section(t["review"], entries_html(cv["review"]), "review")
+    if cv["memberships"]:
+        body += section(t["memberships"], entries_html(cv["memberships"]), "memberships")
     return body
 
 
@@ -1257,6 +1264,7 @@ def build(cv_path: Path = CV_PATH, out_dir: Path = DIST) -> Path:
         "about": ("About", render_about(cv)),
         "research": ("Research", render_research(cv)),
         "teaching": ("Teaching", render_teaching(cv)),
+        "service": ("Service", render_service(cv)),
         "cv": ("CV", render_cv(cv, cv_file)),
         "contact": ("Contact", render_contact(cv)),
     }

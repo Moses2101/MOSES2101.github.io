@@ -1,7 +1,7 @@
 # Academic website, built from my CV
 
 My Word CV is the only thing I edit. Everything on the website (Home, About,
-Research, Teaching, CV and Contact) is generated from it, and a downloadable
+Research, Teaching, Service, CV and Contact) is generated from it, and a downloadable
 copy of the CV is published alongside the pages.
 
 ## The update loop
@@ -47,9 +47,10 @@ committed. The site uses small copies in `assets/photos/`.
 To add, swap or remove a photo:
 
 1. Put the original in `Images/`.
-2. Open `photos.json` and add an entry where I want it: `portrait` (Home page
-   and Contact), `home` (Highlights), `research-presentations`, `research-epc`
-   or `about-service`. Each entry has the file name (`src`), a `caption` shown
+2. Open `photos.json` and add an entry where I want it: `portrait` (Home,
+   About and Contact), `home` (Highlights), `about-education`,
+   `research-presentations`, `research-epc` or `service` (Leadership and
+   Community Service). Each entry has the file name (`src`), a `caption` shown
    under the photo, and `alt` text describing the photo for screen readers.
 3. Make the web copies, then preview and publish:
 
