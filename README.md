@@ -72,6 +72,9 @@ To add, swap or remove a photo:
    `research-presentations`, `research-epc`, `teaching` or `service` (Leadership and
    Community Service). Each entry has the file name (`src`), a `caption` shown
    under the photo, and `alt` text describing the photo for screen readers.
+   For certificates and plaques, add `"fit": "contain"` so the whole image
+   shows instead of being trimmed to fit the tile. Gallery names also include
+   `about-awards` and `service-conference`.
 3. Make the web copies, then preview and publish:
 
    ```

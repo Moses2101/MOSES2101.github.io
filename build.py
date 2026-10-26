@@ -952,7 +952,7 @@ def gallery(name: str) -> str:
     if not items:
         return ""
     figs = "".join(
-        f'<figure class="photo">{img_tag(p)}'
+        f'<figure class="photo">{img_tag(p, "fit-contain" if p.get("fit") == "contain" else "")}'
         + (f"<figcaption>{esc(p['caption'])}</figcaption>" if p.get("caption") else "")
         + "</figure>"
         for p in items
@@ -1134,7 +1134,7 @@ def render_about(cv: dict) -> str:
     body += section(t["summary"], '<div class="prose">' + "".join(f"<p>{rich(p)}</p>" for p in cv["summary"]) + "</div>")
     body += section(t["education"], gallery("about-education") + entries_html(cv["education"]), "education")
     if cv["awards"]:
-        body += section(t["awards"], entries_html(cv["awards"]), "awards")
+        body += section(t["awards"], gallery("about-awards") + entries_html(cv["awards"]), "awards")
     return body
 
 
