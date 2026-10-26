@@ -9,6 +9,7 @@ Standard library only, so it runs on any machine with Python 3.8+.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -840,6 +841,11 @@ def load_photos() -> dict:
 PHOTOS: dict = {"portrait": None, "galleries": {}}
 
 
+def asset_version(name: str) -> str:
+    """Short content hash, so browsers fetch a changed stylesheet or script right away."""
+    return hashlib.sha1((ASSETS / name).read_bytes()).hexdigest()[:10]
+
+
 def img_tag(p: dict, cls: str = "", eager: bool = False) -> str:
     size = f' width="{p["w"]}" height="{p["h"]}"' if p["w"] else ""
     loading = "" if eager else ' loading="lazy"'
@@ -924,8 +930,8 @@ def layout(slug: str, title: str, body: str, cv: dict, description: str) -> str:
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
-<link rel="stylesheet" href="assets/style.css">
-<script src="assets/site.js"></script>
+<link rel="stylesheet" href="assets/style.css?v={asset_version('style.css')}">
+<script src="assets/site.js?v={asset_version('site.js')}"></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
