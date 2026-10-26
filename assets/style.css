@@ -207,6 +207,9 @@ a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
 /* Photo galleries */
 .gallery { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); margin-bottom: 2rem; }
 .photo { margin: 0; }
+.gallery-block { margin: .5rem 0 2.5rem; padding-top: 1.75rem; border-top: 1px solid var(--border); }
+.gallery-title { font-size: 1.2rem; font-weight: 560; max-width: 46rem; }
+.gallery-note { color: var(--muted); max-width: var(--measure); margin: .6rem 0 1.25rem; }
 .photo img {
   display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%;
   border-radius: var(--radius); background: var(--surface-2);

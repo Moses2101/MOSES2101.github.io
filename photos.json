@@ -3,7 +3,45 @@
     "src": "Moses Photo.jpeg",
     "alt": "Portrait of Moses Oladele Ogunniran"
   },
+  "gallery_titles": {
+    "service-conference": {
+      "title": "1st Annual International Student Union Conference, Faculty of Education, Beijing Normal University (2019)",
+      "note": "I conceived the faculty's first International Student–Faculty Conference as Minister of Academics and saw it fully implemented during my tenure as President of the International Students Association, bringing together local and international students and faculty to exchange research as colleagues."
+    }
+  },
   "galleries": {
+    "service-conference": [
+      {
+        "src": "65948c943c03b0fd078eacfc67ec8dd.jpg",
+        "caption": "Students and faculty fill the conference room",
+        "alt": "A full seminar room of students and faculty facing a presentation screen"
+      },
+      {
+        "src": "42a753ab4050a4b9c4bce1b09aff052.jpg",
+        "caption": "A faculty session: “The Changing Nature of Labor”",
+        "alt": "Two faculty speakers beside a slide titled The Changing Nature of Labor"
+      },
+      {
+        "src": "8dd5b1594e4a3acf96cb7d7f5dd908f.jpg",
+        "caption": "A doctoral student presents “Revolutionary Education Upholds Future Job Skills: A New Dawn for Women in Zambia”",
+        "alt": "A doctoral student presenting in front of her title slide"
+      },
+      {
+        "src": "72bcb1441541131613d497680d1ad1e.jpg",
+        "caption": "A Ph.D. scholar presents a comparative study of academic supervision at Beijing Normal University and Punjab University",
+        "alt": "A Ph.D. scholar presenting beside a slide on academic supervision of Ph.D. students"
+      },
+      {
+        "src": "6174d5e9e2c93d0c1f7f3b7027410f3.jpg",
+        "caption": "Faculty speakers with a certificate at the close of a session",
+        "alt": "Two faculty members holding a certificate in front of a Thank You slide"
+      },
+      {
+        "src": "425c07468480f9b41b6714740f73d7f.jpg",
+        "caption": "Conference participants",
+        "alt": "Conference participants standing together in front of a presentation screen"
+      }
+    ],
     "home": [
       {
         "src": "AERA CONFERENCE.jpeg",

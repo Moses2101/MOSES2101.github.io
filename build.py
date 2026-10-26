@@ -826,7 +826,7 @@ def jpeg_size(path: Path) -> tuple[int, int]:
 def load_photos() -> dict:
     """Read photos.json, keeping only pictures whose web copy exists."""
     if not PHOTOS_CONFIG.exists():
-        return {"portrait": None, "galleries": {}}
+        return {"portrait": None, "galleries": {}, "titles": {}}
     try:
         config = json.loads(PHOTOS_CONFIG.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
@@ -847,10 +847,22 @@ def load_photos() -> dict:
         resolved = [p for p in (resolve(i) for i in items) if p]
         if resolved:
             galleries[name] = resolved
-    return {"portrait": resolve(config.get("portrait")), "galleries": galleries}
+    return {"portrait": resolve(config.get("portrait")), "galleries": galleries,
+            "titles": config.get("gallery_titles") or {}}
 
 
-PHOTOS: dict = {"portrait": None, "galleries": {}}
+PHOTOS: dict = {"portrait": None, "galleries": {}, "titles": {}}
+
+
+def titled_gallery(name: str) -> str:
+    """A gallery with the heading and note from photos.json "gallery_titles"."""
+    body = gallery(name)
+    if not body:
+        return ""
+    meta = PHOTOS["titles"].get(name) or {}
+    head = f'<h3 class="gallery-title">{esc(meta["title"])}</h3>' if meta.get("title") else ""
+    note = f'<p class="gallery-note">{esc(meta["note"])}</p>' if meta.get("note") else ""
+    return f'<div class="gallery-block">{head}{note}{body}</div>'
 
 
 # --------------------------------------------------------------------------
@@ -1160,7 +1172,8 @@ def render_service(cv: dict) -> str:
     if st:
         body += section(st["title"] or "Service Statement", statement_html(st), "statement")
     if cv["service"]:
-        body += section(t["service"], gallery("service") + entries_html(cv["service"]), "leadership")
+        body += section(t["service"], gallery("service") + titled_gallery("service-conference")
+                        + entries_html(cv["service"]), "leadership")
     if cv["review"]:
         body += section(t["review"], entries_html(cv["review"]), "review")
     if cv["memberships"]:
