@@ -194,7 +194,7 @@ a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
 }
 .contact-portrait { width: 9rem; margin-bottom: 1.25rem; }
 .page-head.has-portrait { display: flex; flex-wrap: wrap-reverse; align-items: center; justify-content: space-between; gap: 1.5rem 3rem; }
-.page-head.has-portrait > div { flex: 1 1 24rem; }
+.page-head.has-portrait > div:first-child { flex: 1 1 24rem; }
 .page-portrait { width: 9rem; flex: none; }
 @media (min-width: 820px) { .page-portrait { width: 11rem; } }
 .page-portrait img {
