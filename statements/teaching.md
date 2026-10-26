@@ -12,7 +12,7 @@ In my own classes, I establish clear norms for respectful discussion, learn stud
 
 ## 2. Clear goals, aligned activities and fair assessment
 
-I plan courses by starting with what students already know and what they should be able to do at the end, then designing activities and assessments that lead there. This approach guides my work as School Director of Victory Delight College, where I lead the design and review of the curriculum and help teachers align learning outcomes, lesson activities and assessments with national standards and examination requirements. It also shapes my contribution to AHE 510: Perspectives in Higher Education Administration at The University of Alabama, where I take part in course planning and instructional meetings focused on student learning outcomes.
+I plan courses by starting with what students already know and what they should be able to do at the end, then designing activities and assessments that lead there. This approach guides my work as School Director of Victory Delight College, where I lead the design and review of the curriculum and help teachers align learning outcomes, lesson activities and assessments with national standards and examination requirements. It also shapes my contribution to AHE 500: Perspectives in Higher Education Administration at The University of Alabama, where I take part in course planning and instructional meetings focused on student learning outcomes.
 
 I value assessments that are varied and meaningful, such as case analyses, data projects, policy briefs, presentations and reflective writing, so that students can show their learning in more than one way and practice the kinds of work they will do in their careers.
 

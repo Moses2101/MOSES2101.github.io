@@ -1149,7 +1149,7 @@ def render_teaching(cv: dict) -> str:
     body = f'<header class="page-head"><h1>Teaching</h1>{statement_lead(st)}</header>'
     if st:
         body += section(st["title"] or "Pedagogical Statement", statement_html(st), "philosophy")
-    body += section(cv["titles"]["teaching"], entries_html(cv["teaching"]), "teaching")
+    body += section(cv["titles"]["teaching"], gallery("teaching") + entries_html(cv["teaching"]), "teaching")
     return body
 
 
