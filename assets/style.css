@@ -193,6 +193,15 @@ a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
   .hero-text { max-width: 46rem; }
 }
 .contact-portrait { width: 9rem; margin-bottom: 1.25rem; }
+.page-head.has-portrait { display: flex; flex-wrap: wrap-reverse; align-items: center; justify-content: space-between; gap: 1.5rem 3rem; }
+.page-head.has-portrait > div { flex: 1 1 24rem; }
+.page-portrait { width: 9rem; flex: none; }
+@media (min-width: 820px) { .page-portrait { width: 11rem; } }
+.page-portrait img {
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 20%;
+  border-radius: 18px; box-shadow: 0 0 0 1px var(--border), var(--shadow);
+}
+.gallery-1 { max-width: 40rem; }
 
 /* Photo galleries */
 .gallery { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); margin-bottom: 2rem; }

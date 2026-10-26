@@ -1024,9 +1024,10 @@ def render_home(cv: dict, cv_file: str) -> str:
 
 def render_about(cv: dict) -> str:
     t = cv["titles"]
-    body = '<header class="page-head"><h1>About</h1>' + f'<p class="page-lead">{esc(tagline(cv))}.</p></header>'
+    body = ('<header class="page-head has-portrait"><div><h1>About</h1>'
+            f'<p class="page-lead">{esc(tagline(cv))}.</p></div>{portrait("page-portrait")}</header>')
     body += section(t["summary"], '<div class="prose">' + "".join(f"<p>{rich(p)}</p>" for p in cv["summary"]) + "</div>")
-    body += section(t["education"], entries_html(cv["education"]), "education")
+    body += section(t["education"], gallery("about-education") + entries_html(cv["education"]), "education")
     if cv["awards"]:
         body += section(t["awards"], entries_html(cv["awards"]), "awards")
     if cv["service"]:
