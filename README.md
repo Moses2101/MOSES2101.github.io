@@ -39,6 +39,26 @@ This rebuilds the site and opens it at http://localhost:8000. Addresses work
 the same way as on GitHub Pages (`/about`, `/research`, ...). Press Ctrl+C to
 stop it.
 
+## Teaching and service statements
+
+The statements at the top of the Teaching and Service pages live in
+`statements/teaching.md` and `statements/service.md`. They're plain text and
+open in Notepad. The first paragraph becomes the page's opening; then:
+
+- `# Title` is the section heading (for example, "Pedagogical Statement").
+- `> sentence` is the highlighted quote.
+- `## 1. Heading` starts a numbered principle; `## Heading` starts an
+  unnumbered part.
+- `*Title*` shows in italics (for book or journal titles).
+
+After editing, preview with `python serve.py`, then publish:
+
+```
+git add -A
+git commit -m "Update statements"
+git push
+```
+
 ## Photos
 
 My original photos live in `Images/`. That folder is never published or

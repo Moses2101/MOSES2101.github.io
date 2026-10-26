@@ -27,6 +27,7 @@ CV_PATH = ROOT / "cv" / "cv.docx"
 ASSETS = ROOT / "assets"
 PHOTOS_DIR = ASSETS / "photos"
 PHOTOS_CONFIG = ROOT / "photos.json"
+STATEMENTS_DIR = ROOT / "statements"
 DIST = ROOT / "dist"
 
 # Section key -> headings (compared case-insensitively, ignoring a trailing
@@ -852,6 +853,76 @@ def load_photos() -> dict:
 PHOTOS: dict = {"portrait": None, "galleries": {}}
 
 
+# --------------------------------------------------------------------------
+# Statements (optional): statements/teaching.md and statements/service.md.
+# "# Title", then paragraphs; "> line" is a pull quote; "## Heading" starts a
+# part ("## 1. Heading" shows a number); *text* is italic.
+# --------------------------------------------------------------------------
+
+def load_statement(name: str) -> dict | None:
+    path = STATEMENTS_DIR / f"{name}.md"
+    if not path.exists():
+        return None
+    st = {"title": "", "quote": "", "intro": [], "parts": []}
+    para: list[str] = []
+
+    def flush():
+        if para:
+            text = " ".join(para)
+            (st["parts"][-1]["paras"] if st["parts"] else st["intro"]).append(text)
+            para.clear()
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if not s:
+            flush()
+        elif s.startswith("## "):
+            flush()
+            head = s[3:].strip()
+            m = re.match(r"(\d+)[.)]\s+(.*)", head)
+            st["parts"].append({"num": m.group(1) if m else "", "title": m.group(2) if m else head, "paras": []})
+        elif s.startswith("# "):
+            flush()
+            st["title"] = s[2:].strip()
+        elif s.startswith(">"):
+            flush()
+            st["quote"] = s.lstrip("> ").strip()
+        else:
+            para.append(s)
+    flush()
+    found = PHONE_RE.search(path.read_text(encoding="utf-8"))
+    if found:
+        raise BuildError(f"Refusing to publish: '{found.group(0)}' in {path.name} looks like a phone number.")
+    return st if (st["intro"] or st["parts"]) else None
+
+
+def inline(text: str) -> str:
+    return re.sub(r"\*([^*]+)\*", r"<em>\1</em>", rich(text))
+
+
+def statement_html(st: dict) -> str:
+    """Everything except the first intro paragraph, which the page head shows."""
+    parts = []
+    if st["quote"]:
+        parts.append(f'<blockquote class="pull-quote"><p>{inline(st["quote"])}</p></blockquote>')
+    if st["intro"][1:]:
+        parts.append('<div class="prose">' + "".join(f"<p>{inline(p)}</p>" for p in st["intro"][1:]) + "</div>")
+    rows = []
+    for part in st["parts"]:
+        num = f'<span class="statement-num" aria-hidden="true">{esc(part["num"])}</span>' if part["num"] else ""
+        rows.append(
+            '<div class="statement-row">'
+            f'<h3 class="statement-head">{num}{inline(part["title"])}</h3>'
+            '<div class="prose">' + "".join(f"<p>{inline(p)}</p>" for p in part["paras"]) + "</div></div>"
+        )
+    parts.append('<div class="statement">' + "".join(rows) + "</div>")
+    return "".join(parts)
+
+
+def statement_lead(st: dict | None) -> str:
+    return f'<p class="page-lead">{inline(st["intro"][0])}</p>' if st and st["intro"] else ""
+
+
 def asset_version(name: str) -> str:
     """Short content hash, so browsers fetch a changed stylesheet or script right away."""
     return hashlib.sha1((ASSETS / name).read_bytes()).hexdigest()[:10]
@@ -1074,14 +1145,20 @@ def render_research(cv: dict) -> str:
 
 
 def render_teaching(cv: dict) -> str:
-    body = '<header class="page-head"><h1>Teaching</h1></header>'
+    st = load_statement("teaching")
+    body = f'<header class="page-head"><h1>Teaching</h1>{statement_lead(st)}</header>'
+    if st:
+        body += section(st["title"] or "Pedagogical Statement", statement_html(st), "philosophy")
     body += section(cv["titles"]["teaching"], entries_html(cv["teaching"]), "teaching")
     return body
 
 
 def render_service(cv: dict) -> str:
     t = cv["titles"]
-    body = '<header class="page-head"><h1>Service</h1></header>'
+    st = load_statement("service")
+    body = f'<header class="page-head"><h1>Service</h1>{statement_lead(st)}</header>'
+    if st:
+        body += section(st["title"] or "Service Statement", statement_html(st), "statement")
     if cv["service"]:
         body += section(t["service"], gallery("service") + entries_html(cv["service"]), "leadership")
     if cv["review"]:
