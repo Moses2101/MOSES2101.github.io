@@ -155,7 +155,12 @@ def main() -> int:
                 print("Cancelled. Nothing was committed.")
                 return 0
         target.parent.mkdir(exist_ok=True)
-        shutil.copyfile(staged, target)
+        try:
+            shutil.copyfile(staged, target)
+        except PermissionError:
+            print(f"Cannot update {target.relative_to(build.ROOT)}: it is open in Word. "
+                  "Close it there (it is only the site's copy) and run publish.py again.", file=sys.stderr)
+            return 1
 
     build.build()
     git("add", "-A")
