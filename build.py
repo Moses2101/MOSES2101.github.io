@@ -278,7 +278,8 @@ def finalize_header(raw_lines: list[str]) -> dict:
 # --------------------------------------------------------------------------
 
 def parse_paragraph_text(paras: list[Para]) -> list[str]:
-    return [t for t in (clean(p.text) for p in paras) if t]
+    # A line break (Shift+Enter) in Word starts a new paragraph on the site too.
+    return [t for t in (clean(line) for p in paras for line in p.text.split("\n")) if t]
 
 
 def parse_interests(paras: list[Para]) -> list[str]:
